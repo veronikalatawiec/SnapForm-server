@@ -23,3 +23,11 @@ app.get("/", (_req, res) => {
   app.listen(PORT, () => {
     console.log(`running on http://localhost:${PORT}`);
   });
+  
+  const argon2 = require('argon2');
+
+// Hashing a password
+const hashedPassword = await argon2.hash('userPassword');
+
+// Verifying a password
+const isMatch = await argon2.verify(hashedPassword, 'userPassword');
