@@ -1,7 +1,9 @@
 import express from "express";
+import cors from 'cors';
 import "dotenv/config";
 import userRoutes from "./routes/users.js"
 import formRoutes from "./routes/forms.js"
+
 
 const app = express();
 
@@ -24,10 +26,10 @@ app.get("/", (_req, res) => {
     console.log(`running on http://localhost:${PORT}`);
   });
   
-  const argon2 = require('argon2');
+// const argon2 = require('argon2');
 
-// Hashing a password
-const hashedPassword = await argon2.hash('userPassword');
+// // Hashing a password
+// const hashedPassword = await argon2.hash('userPassword');
 
-// Verifying a password
-const isMatch = await argon2.verify(hashedPassword, 'userPassword');
+// // Verifying a password
+// const isMatch = await argon2.verify(hashedPassword, 'userPassword');
