@@ -98,11 +98,9 @@ router.put('/:user_id/:id', authenticate, async (req, res) => {
     }
   });
 
-//GET /:user_id/forms
+//GET /forms/:user_id/
 
-//GET /:user_id/forms/:id
-
-//GET /:user_id/forms/:id/responses
+//GET /forms/:user_id/:id/responses
 
 router.get('/', (_req, res) => {
     res.send('Hello World we up!');
