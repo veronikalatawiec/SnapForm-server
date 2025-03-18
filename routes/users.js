@@ -40,5 +40,31 @@ router.post('/', async (req, res) => {
   });
 
 // POST /users/login
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // find email of user
+      const user = await db('users').where({ email }).first();
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid email' });
+      }
+  
+      // password verif
+      const validPassword = await argon2.verify(user.password, password);
+      if (!validPassword) {
+        return res.status(400).json({ message: 'Invalid password' });
+      }
+  
+      // generate jwt
+      const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_KEY, { expiresIn: '1h' });
+  
+      // return token
+      res.status(201).json({ message: 'Successfully signed in', token: token });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error during user login' });
+    }
+  });
 
 export default router;
