@@ -51,7 +51,52 @@ router.post('/:user_id', authenticate, async (req, res) => {
   });
 
   
-//PUT /:user_id/forms/:id
+//PUT /forms/:user_id/:id
+router.put('/:user_id/:id', authenticate, async (req, res) => {
+    const { user_id, id } = req.params;
+    const { name, status, sections, design_object } = req.body;
+  
+    // Verify user
+    if (req.user.id !== parseInt(user_id)) {
+      return res.status(403).json({ message: 'User not authorized' });
+    }
+  
+    try {
+      // update details pf form
+      await db('forms')
+        .where({ id: parseInt(id), user_id: parseInt(user_id) })
+        .update({
+          name,
+          status,
+          design_object: JSON.stringify(design_object),
+        //   created: new Date(),
+          updated: new Date(),
+        });
+  
+      // remove old
+      await db('form_sections')
+        .where('form_id', id) 
+        .del();
+  
+      // insert new fields
+      for (const section of sections) {
+        await db('form_sections').insert({
+          form_id: parseInt(id),
+          type: section.type,
+          label: section.label,
+          options: section.options ? JSON.stringify(section.options) : null,
+          created: new Date(),
+          updated: new Date(),
+        });
+      }
+  
+      // Res
+      res.status(200).json({ message: 'Form successfully updated', form_id: id });
+    } catch (error) {
+      console.error(error);
+      res.status(400).json({ message: 'Error updating form' });
+    }
+  });
 
 //GET /:user_id/forms
 
