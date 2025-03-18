@@ -6,7 +6,7 @@ const authenticate = (req, res, next) => {
 
   if (!token) return res.status(403).json({ message: 'Access Denied' });
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_KEY, (err, user) => {
     if (err) return res.status(403).json({ message: 'Invalid or expired token' });
     req.user = user;
     next();

@@ -16,7 +16,7 @@ app.use(cors({ origin: CORS_ORIGIN }));
 
 //import routes
 app.use("/users", userRoutes);
-app.use("/:user_id/forms", formRoutes);
+app.use("/forms", formRoutes);
 
 app.get("/", (_req, res) => {
     res.send("Hello World! We be running!");
