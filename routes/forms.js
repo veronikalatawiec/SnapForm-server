@@ -99,8 +99,157 @@ router.put('/:user_id/:id', authenticate, async (req, res) => {
   });
 
 //GET /forms/:user_id/
+router.get('/:user_id', authenticate, async (req, res) => {
+    const { user_id } = req.params;
+  
+    // Verify user
+    if (req.user.id !== parseInt(user_id)) {
+      return res.status(403).json({ message: 'User not authorized' });
+    }
+  
+    try {
+      // get users forms
+      const forms = await db('forms')
+        .where({ user_id: parseInt(user_id) })
+        .select('id as form_id', 'name', 'status', 'design_object', 'total_responses', 'created', 'updated');
+  
+      // no forms?
+      if (forms.length === 0) {
+        return res.status(404).json({ message: 'No forms found for this user' });
+      }
+  
+      // get sections for this form
+      for (let form of forms) {
+        const sections = await db('form_sections')
+          .where('form_id', form.form_id)
+          .select('type', 'label', 'options');
+          
+        // Add sections
+        form.sections = sections.map(section => ({
+            type: section.type,
+            label: section.label,
+            options: section.options ? parseJSON(section.options) : null,
+          }));
+          
+          // added because wrong format ruins everything
+          function parseJSON(jsonString) {
+            try {
+              return JSON.parse(jsonString); // Try to parse
+            } catch (e) {
+              return jsonString; // If cant just return
+            }
+          }
+        }
+  
+      // Return all
+      res.status(200).json(forms);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching forms' });
+    }
+  });
+
+//GET /forms/:user_id/:id
+router.get('/:user_id/:id', authenticate, async (req, res) => {
+    const { user_id, id } = req.params;
+  
+    // Verify user
+    if (req.user.id !== parseInt(user_id)) {
+      return res.status(403).json({ message: 'User not authorized' });
+    }
+  
+    try {
+      // Fetch specific form
+      const form = await db('forms')
+        .where({ user_id: parseInt(user_id), id: parseInt(id) })
+        .first();
+  
+      // no form?
+      if (!form) {
+        return res.status(404).json({ message: 'Form not found' });
+      }
+  
+      // get sections
+      const sections = await db('form_sections')
+        .where('form_id', id)
+        .select('type', 'label', 'options');
+  
+      // Add sections
+      form.sections = sections.map(section => ({
+        type: section.type,
+        label: section.label,
+        options: section.options ? JSON.parse(section.options) : null, // Parse options if available
+      }));
+  
+      // Return & res
+      res.status(200).json({ form });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching form' });
+    }
+  });
 
 //GET /forms/:user_id/:id/responses
+//NEED TO TEST!
+router.get('/:user_id/forms/:form_id/responses', authenticate, async (req, res) => {
+    const { user_id, form_id } = req.params;
+  
+    // Verify the user
+    if (req.user.id !== parseInt(user_id)) {
+      return res.status(403).json({ message: 'User not authorized' });
+    }
+  
+    try {
+      // Fetch the form
+      const form = await db('forms')
+        .where({ user_id: parseInt(user_id), id: parseInt(form_id) })
+        .first();
+  
+      // no form 
+      if (!form) {
+        return res.status(404).json({ message: 'Form not found' });
+      }
+  
+      // Fetch the form sections
+      const formSections = await db('form_sections')
+        .where('form_id', form_id)
+        .select('id as form_section_id', 'type', 'label'); 
+  
+      // Fetch the responses 
+      const responses = await db('form_responses')
+        .join('form_sections', 'form_responses.form_section_id', '=', 'form_sections.id')
+        .where('form_responses.form_id', form_id)
+        .select('form_responses.id', 'form_responses.content', 'form_responses.created', 'form_sections.id as form_section_id', 'form_sections.label');
+  
+      // no responses?
+      if (responses.length === 0) {
+        return res.status(404).json({ message: 'No responses found for this form' });
+      }
+  
+      // Format 
+      const formattedResponses = responses.map(response => {
+        const responseObj = { form_id: form_id };
+        
+        //wip format the responses in order
+        // formSections.forEach((section, index) => {
+        //   // Dynamically name the sections as section_1, section_2, etc.
+        //   if (response.form_section_id === section.form_section_id) {
+        //     responseObj[`section_${index + 1}`] = response.content;
+        //   }
+        // });
+  
+        return responseObj;
+      });
+  
+      // Return res
+      res.status(200).json(formattedResponses);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error fetching form responses' });
+    }
+  });
+
+
 
 router.get('/', (_req, res) => {
     res.send('Hello World we up!');
