@@ -43,7 +43,7 @@ router.post('/:user_id', authenticate, async (req, res) => {
       }
   
       // end
-      res.status(201).json({ message: 'Form successfully created', form_id: newFormId[0].form_id });
+      res.status(201).json({form_id: formId });
     } catch (error) {
       console.error(error);
       res.status(400).json({ message: 'Error creating form' });
@@ -190,7 +190,6 @@ router.get('/:user_id/:id', authenticate, async (req, res) => {
   });
 
 //GET /forms/:user_id/:id/responses
-//NEED TO TEST!
 router.get('/:user_id/forms/:form_id/responses', authenticate, async (req, res) => {
     const { user_id, form_id } = req.params;
   
@@ -229,14 +228,12 @@ router.get('/:user_id/forms/:form_id/responses', authenticate, async (req, res) 
       // Format 
       const formattedResponses = responses.map(response => {
         const responseObj = { form_id: form_id };
-        
-        //wip format the responses in order
-        // formSections.forEach((section, index) => {
-        //   // Dynamically name the sections as section_1, section_2, etc.
-        //   if (response.form_section_id === section.form_section_id) {
-        //     responseObj[`section_${index + 1}`] = response.content;
-        //   }
-        // });
+        formSections.forEach((section, index) => {
+          // name sections for response
+          if (response.form_section_id === section.form_section_id) {
+            responseObj[`section_${index + 1}`] = response.content;
+          }
+        });
   
         return responseObj;
       });
