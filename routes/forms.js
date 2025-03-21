@@ -149,6 +149,36 @@ router.get('/:user_id', authenticate, async (req, res) => {
     }
   });
 
+//GET /forms/live/:id
+router.get('/live/:user_id/:id', async (req, res) => {
+  const { user_id, id } = req.params;
+
+  try {
+    // get form
+    const form = await db('forms')
+      .where({ user_id: parseInt(user_id), id: parseInt(id) })
+      .first();
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // get sections
+    const sections = await db('form_sections')
+      .where('form_id', id)
+      .select('type', 'label', 'options'); 
+    form.sections = sections.map(section => ({
+      type: section.type,
+      label: section.label,
+      options: section.options ? JSON.parse(section.options) : null, 
+    }));
+
+    res.status(200).json(form); 
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching form' }); 
+  }
+});
+
 //GET /forms/:user_id/:id
 router.get('/:user_id/:id', authenticate, async (req, res) => {
     const { user_id, id } = req.params;
