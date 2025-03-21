@@ -276,7 +276,35 @@ router.get('/:user_id/forms/:form_id/responses', authenticate, async (req, res) 
     }
   });
 
+// DELETE /forms/:user_id/:id
+router.delete('/:user_id/:id', authenticate, async (req, res) => {
+  const { user_id, id } = req.params;
 
+  try {
+    if (req.user.id !== parseInt(user_id)) {
+      return res.status(403).json({ message: 'User not authorized' });
+    }
+    // delete associated sections
+    await db('form_sections')
+      .where('form_id', parseInt(id))
+      .del();
+
+    // delete form
+    const deletedForm = await db('forms')
+      .where({ id: parseInt(id), user_id: parseInt(user_id) })
+      .del();
+
+    if (deletedForm === 0) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // succ
+    res.status(200).json({ message: 'Form deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error deleting form' });
+  }
+});
 
 router.get('/', (_req, res) => {
     res.send('Hello World we up!');
