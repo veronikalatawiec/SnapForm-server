@@ -149,7 +149,7 @@ router.get('/:user_id', authenticate, async (req, res) => {
     }
   });
 
-//GET /forms/live/:id
+//GET /forms/live/:user_id/:id
 router.get('/live/:user_id/:id', async (req, res) => {
   const { user_id, id } = req.params;
 
@@ -165,14 +165,9 @@ router.get('/live/:user_id/:id', async (req, res) => {
     // get sections
     const sections = await db('form_sections')
       .where('form_id', id)
-      .select('type', 'label', 'options'); 
-    form.sections = sections.map(section => ({
-      type: section.type,
-      label: section.label,
-      options: section.options ? JSON.parse(section.options) : null, 
-    }));
+      console.log(sections);
 
-    res.status(200).json(form); 
+    res.status(200).json(sections); 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching form' }); 
@@ -203,16 +198,9 @@ router.get('/:user_id/:id', authenticate, async (req, res) => {
       const sections = await db('form_sections')
         .where('form_id', id)
         .select('type', 'label', 'options');
-  
-      // Add sections
-      form.sections = sections.map(section => ({
-        type: section.type,
-        label: section.label,
-        options: section.options ? JSON.parse(section.options) : null, // Parse options if available
-      }));
-  
+
       // Return & res
-      res.status(200).json({ form });
+      res.status(200).json(sections);
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error fetching form' });
