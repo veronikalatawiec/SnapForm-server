@@ -91,7 +91,7 @@ router.put('/:user_id/:id', authenticate, async (req, res) => {
       }
   
       // Res
-      res.status(200).json({ message: 'Form successfully updated', form_id: id });
+      res.status(200).json({ message: 'Form successfully updated', form_id: id  });
     } catch (error) {
       console.error(error);
       res.status(400).json({ message: 'Error updating form' });
@@ -165,9 +165,9 @@ router.get('/live/:user_id/:id', async (req, res) => {
     // get sections
     const sections = await db('form_sections')
       .where('form_id', id)
-      console.log(sections);
+      .select('type', 'label', 'options');
 
-    res.status(200).json(sections); 
+    res.status(200).json({sections, form}); 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching form' }); 
@@ -200,7 +200,7 @@ router.get('/:user_id/:id', authenticate, async (req, res) => {
         .select('type', 'label', 'options');
 
       // Return & res
-      res.status(200).json(sections);
+      res.status(200).json({sections, form});
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Error fetching form' });
