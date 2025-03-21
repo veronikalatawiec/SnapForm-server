@@ -115,7 +115,7 @@ router.get('/:user_id', authenticate, async (req, res) => {
   
       // no forms?
       if (forms.length === 0) {
-        return res.status(404).json({ message: 'No forms found for this user' });
+        return res.status(200).json({ message: 'No forms found for this user', forms: [] });
       }
   
       // get sections for this form
