@@ -294,6 +294,55 @@ router.delete('/:user_id/:id', authenticate, async (req, res) => {
   }
 });
 
+//POST /forms/response/:user_id/:id
+router.post('/response/:user_id/:id', async (req, res) => {
+  const { user_id, id } = req.params;
+  const { responses } = req.body;
+
+  try {
+    const form = await db('forms')
+      .where({ id: parseInt(id), user_id: parseInt(user_id) })
+      .first();
+
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found or not accessible.' });
+    }
+
+    const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const createdResponses = [];
+
+    for (let i = 0; i < responses.length; i++) {
+      const response = responses[i];
+      const { form_section_id, content } = response;
+
+      // Insert the response data into the database
+      await db('form_responses').insert({
+        form_id: parseInt(id),  // Insert the form ID
+        form_section_id: form_section_id,  // Insert the section ID
+        content: content,  // The user's response
+        created: currentDate, // Date of submission
+      });
+
+      // Optionally, fetch and store the inserted response if needed
+      const insertedResponse = {
+        form_section_id: form_section_id,
+        content: content,
+        created: currentDate,
+      };
+
+      createdResponses.push(insertedResponse);
+    }
+
+    // Send a success response with the created responses data
+    res.status(200).json({ message: 'Responses submitted successfully', responses: createdResponses });
+
+  } catch (error) {
+    console.error('Error submitting form responses:', error);
+    res.status(500).json({ message: 'Error processing your submission' });
+  }
+});
+
+
 router.get('/', (_req, res) => {
     res.send('Hello World we up!');
   });
