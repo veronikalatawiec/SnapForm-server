@@ -165,7 +165,7 @@ router.get('/live/:user_id/:id', async (req, res) => {
     // get sections
     const sections = await db('form_sections')
       .where('form_id', id)
-      .select('type', 'label', 'options');
+      .select('type', 'label', 'options', 'id');
 
     res.status(200).json({sections, form}); 
   } catch (error) {
@@ -207,62 +207,66 @@ router.get('/:user_id/:id', authenticate, async (req, res) => {
     }
   });
 
-//GET /forms/:user_id/:id/responses
-router.get('/:user_id/forms/:form_id/responses', authenticate, async (req, res) => {
-    const { user_id, form_id } = req.params;
-  
-    // Verify the user
-    if (req.user.id !== parseInt(user_id)) {
-      return res.status(403).json({ message: 'User not authorized' });
+// GET /forms/:user_id/:id/responses
+router.get('/:user_id/:id/responses', authenticate, async (req, res) => {
+  const { user_id, id } = req.params;
+
+  // Verify the user
+  if (req.user.id !== parseInt(user_id)) {
+    return res.status(403).json({ message: 'User not authorized' });
+  }
+
+  try {
+    // Fetch the form
+    const form = await db('forms')
+      .where({ user_id: parseInt(user_id), id: parseInt(id) })
+      .first();
+
+    // No form found
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
     }
-  
-    try {
-      // Fetch the form
-      const form = await db('forms')
-        .where({ user_id: parseInt(user_id), id: parseInt(form_id) })
-        .first();
-  
-      // no form 
-      if (!form) {
-        return res.status(404).json({ message: 'Form not found' });
-      }
-  
-      // Fetch the form sections
-      const formSections = await db('form_sections')
-        .where('form_id', form_id)
-        .select('id as form_section_id', 'type', 'label'); 
-  
-      // Fetch the responses 
-      const responses = await db('form_responses')
-        .join('form_sections', 'form_responses.form_section_id', '=', 'form_sections.id')
-        .where('form_responses.form_id', form_id)
-        .select('form_responses.id', 'form_responses.content', 'form_responses.created', 'form_sections.id as form_section_id', 'form_sections.label');
-  
-      // no responses?
-      if (responses.length === 0) {
-        return res.status(404).json({ message: 'No responses found for this form' });
-      }
-  
-      // Format 
-      const formattedResponses = responses.map(response => {
-        const responseObj = { form_id: form_id };
-        formSections.forEach((section, index) => {
-          // name sections for response
-          if (response.form_section_id === section.form_section_id) {
-            responseObj[`section_${index + 1}`] = response.content;
-          }
-        });
-  
-        return responseObj;
+
+    // Fetch the form sections
+    const formSections = await db('form_sections')
+      .where('form_id', id)
+      .select('id as form_section_id', 'type', 'label'); 
+
+    // Fetch the responses 
+    const responses = await db('form_responses')
+      .join('form_sections', 'form_responses.form_section_id', '=', 'form_sections.id')
+      .where('form_responses.form_id', id)
+      .select('form_responses.id', 'form_responses.content', 'form_responses.created', 'form_sections.id as form_section_id', 'form_sections.label');
+
+    // No responses found
+    if (responses.length === 0) {
+      return res.status(404).json({ message: 'No responses found for this form' });
+    }
+
+    // Format responses
+    const formattedResponses = responses.map(response => {
+      const responseObj = { form_id: id };
+      formSections.forEach((section, index) => {
+        // Group responses by section
+        if (response.form_section_id === section.form_section_id) {
+          responseObj[`section_${index + 1}`] = response.content;
+        }
       });
-  
-      // Return res
-      res.status(200).json(formattedResponses);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error fetching form responses' });
-    }
-  });
+
+      return responseObj;
+    });
+
+    // Return formatted responses along with total count
+    res.status(200).json({
+      totalResponses: responses.length,
+      responses: formattedResponses
+    });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error fetching form responses' });
+  }
+});
 
 // DELETE /forms/:user_id/:id
 router.delete('/:user_id/:id', authenticate, async (req, res) => {
@@ -318,7 +322,7 @@ router.post('/response/:user_id/:id', async (req, res) => {
       await db('form_responses').insert({
         form_id: parseInt(id),
         form_section_id: form_section_id,
-        content: content,
+        content: JSON.stringify(content),
         created: currentDate,
       });
 
