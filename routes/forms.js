@@ -315,15 +315,13 @@ router.post('/response/:user_id/:id', async (req, res) => {
       const response = responses[i];
       const { form_section_id, content } = response;
 
-      // Insert the response data into the database
       await db('form_responses').insert({
-        form_id: parseInt(id),  // Insert the form ID
-        form_section_id: form_section_id,  // Insert the section ID
-        content: content,  // The user's response
-        created: currentDate, // Date of submission
+        form_id: parseInt(id),
+        form_section_id: form_section_id,
+        content: content,
+        created: currentDate,
       });
 
-      // Optionally, fetch and store the inserted response if needed
       const insertedResponse = {
         form_section_id: form_section_id,
         content: content,
@@ -333,7 +331,6 @@ router.post('/response/:user_id/:id', async (req, res) => {
       createdResponses.push(insertedResponse);
     }
 
-    // Send a success response with the created responses data
     res.status(200).json({ message: 'Responses submitted successfully', responses: createdResponses });
 
   } catch (error) {
