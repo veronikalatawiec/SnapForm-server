@@ -349,12 +349,10 @@ router.post("/response/:user_id/:id", async (req, res) => {
       createdResponses.push(insertedResponse);
     }
 
-    res
-      .status(200)
-      .json({
-        message: "Responses submitted successfully",
-        responses: createdResponses,
-      });
+    res.status(200).json({
+      message: "Responses submitted successfully",
+      responses: createdResponses,
+    });
   } catch (error) {
     console.error("Error submitting form responses:", error);
     res.status(500).json({ message: "Error processing your submission" });
